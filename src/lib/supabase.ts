@@ -10,4 +10,9 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
 });
