@@ -25,29 +25,42 @@ const emojiMap: Record<string, string> = {
   Meteor: '🌠',
 };
 
-export function IconBadge({ mascot }: { mascot: string }) {
+export function IconBadge({ mascot, size = 56 }: { mascot: string; size?: number }) {
   const key = mascot.split(' ')[0] ?? 'Rocket';
   const emoji = emojiMap[key] ?? '🎮';
 
   return (
-    <View style={styles.badge}>
-      <Text style={styles.emoji}>{emoji}</Text>
+    <View
+      style={[
+        styles.badge,
+        {
+          width: size,
+          height: size,
+          borderRadius: Math.round(size * 0.32),
+        },
+      ]}
+    >
+      <Text
+        style={[
+          styles.emoji,
+          {
+            fontSize: Math.round(size * 0.46),
+          },
+        ]}
+      >
+        {emoji}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  emoji: {
-    fontSize: 26,
-  },
+  emoji: {},
 });

@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
+import { PlayerTurnCard } from '../components/PlayerTurnCard';
 import { Screen } from '../components/Screen';
 import { useAuth } from '../features/auth/AuthContext';
 import { applyMove, getPlayableBoards } from '../features/game-engine/engine';
@@ -67,27 +68,36 @@ export function OnlineGameScreen({ navigation, route }: Props) {
   return (
     <Screen>
       <Card>
-        <Text style={styles.title}>Game code {session.game.code}</Text>
-        <Text style={styles.turn}>
+        <Text
+          style={[
+            styles.turn,
+            session.game.currentTurnPlayer === 'X' ? styles.turnX : styles.turnO,
+          ]}
+        >
           {currentPlayer?.nickname ?? 'Waiting'} ({session.game.currentTurnPlayer}) to play
         </Text>
-        <Text style={styles.body}>
+        <Text style={styles.bodyCentered}>
           {playableBoards.length === 1
             ? `The next move must go in board ${playableBoards[0] + 1}.`
             : 'The next player can choose any open board.'}
         </Text>
-        <View style={styles.players}>
+        <View style={styles.playerRow}>
           {session.players.map((player) => (
-            <Text key={player.id} style={styles.player}>
-              {player.seat}: {player.nickname} ({player.mascot})
-              {player.profileId === profile.id ? ' - you' : ''}
-            </Text>
+            <PlayerTurnCard
+              key={player.id}
+              nickname={player.nickname}
+              mascot={player.mascot}
+              symbol={player.seat}
+              isActive={session.game.currentTurnPlayer === player.seat}
+              isYou={player.profileId === profile.id}
+            />
           ))}
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </Card>
 
       <NestedBoard
+        activePlayer={session.game.currentTurnPlayer}
         state={session.game.state}
         disabled={!canMove || isSubmittingMove}
         onMove={(boardIndex, cellIndex) => {
@@ -110,28 +120,27 @@ export function OnlineGameScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '800',
-  },
   turn: {
-    color: colors.primary,
+    textAlign: 'center',
     fontSize: 18,
     fontWeight: '700',
   },
-  body: {
+  turnX: {
+    color: colors.playerX,
+  },
+  turnO: {
+    color: colors.playerO,
+  },
+  bodyCentered: {
     color: colors.textMuted,
     fontSize: 15,
     lineHeight: 22,
+    textAlign: 'center',
   },
-  players: {
-    gap: 6,
-  },
-  player: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+  playerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
   },
   error: {
     color: colors.danger,

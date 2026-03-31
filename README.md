@@ -76,6 +76,33 @@ For web:
 npx expo start --web --port 8082
 ```
 
+Build the production web app:
+
+```powershell
+npm.cmd run build:web
+```
+
+## Deploy to Vercel
+
+This repo is prepared for Vercel with `vercel.json`.
+
+Deploy with the Vercel CLI:
+
+```powershell
+npm install -g vercel
+vercel
+```
+
+For production deploys:
+
+```powershell
+vercel --prod
+```
+
+Vercel will use:
+- build command: `npm.cmd run build:web`
+- output directory: `dist`
+
 ## Supabase Setup
 
 Run the SQL in:
