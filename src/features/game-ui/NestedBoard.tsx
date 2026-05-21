@@ -28,60 +28,66 @@ export function NestedBoard({
   return (
     <View style={styles.boardFrame}>
       <View style={styles.outerGrid}>
-        {state.boards.map((board, boardIndex) => {
-          const boardWinner = state.boardWinners[boardIndex];
-          const boardIsPlayable = playableBoards.includes(boardIndex);
+        {Array.from({ length: 3 }, (_, row) => (
+          <View key={row} style={styles.boardRow}>
+            {Array.from({ length: 3 }, (_, col) => {
+              const boardIndex = row * 3 + col;
+              const board = state.boards[boardIndex];
+              const boardWinner = state.boardWinners[boardIndex];
+              const boardIsPlayable = playableBoards.includes(boardIndex);
 
-          return (
-            <View
-              key={boardIndex}
-              style={[
-                styles.smallBoard,
-                boardIsPlayable ? activeBoardStyle : undefined,
-                boardWinner ? styles.completedBoard : undefined,
-              ]}
-            >
-              {board.map((cell, cellIndex) => {
-                const canPlay = !disabled && canPlayMove(state, boardIndex, cellIndex);
+              return (
+                <View
+                  key={boardIndex}
+                  style={[
+                    styles.smallBoard,
+                    boardIsPlayable ? activeBoardStyle : undefined,
+                    boardWinner ? styles.completedBoard : undefined,
+                  ]}
+                >
+                  {board.map((cell, cellIndex) => {
+                    const canPlay = !disabled && canPlayMove(state, boardIndex, cellIndex);
 
-                return (
-                  <Pressable
-                    key={`${boardIndex}-${cellIndex}`}
-                    disabled={!canPlay}
-                    onPress={() => onMove(boardIndex, cellIndex)}
-                    style={({ pressed }) => [
-                      styles.cell,
-                      canPlay ? activeCellStyle : undefined,
-                      pressed && canPlay ? activeCellPressedStyle : undefined,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.cellText,
-                        cell === 'O' ? styles.cellO : styles.cellX,
-                      ]}
-                    >
-                      {cell ?? ''}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                    return (
+                      <Pressable
+                        key={`${boardIndex}-${cellIndex}`}
+                        disabled={!canPlay}
+                        onPress={() => onMove(boardIndex, cellIndex)}
+                        style={({ pressed }) => [
+                          styles.cell,
+                          canPlay ? activeCellStyle : undefined,
+                          pressed && canPlay ? activeCellPressedStyle : undefined,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.cellText,
+                            cell === 'O' ? styles.cellO : styles.cellX,
+                          ]}
+                        >
+                          {cell ?? ''}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
 
-              {boardWinner ? (
-                <View style={styles.winnerOverlay}>
-                  <Text
-                    style={[
-                      styles.winnerText,
-                      boardWinner === 'O' ? styles.cellO : styles.cellX,
-                    ]}
-                  >
-                    {boardWinner === 'draw' ? 'D' : boardWinner}
-                  </Text>
+                  {boardWinner ? (
+                    <View style={styles.winnerOverlay}>
+                      <Text
+                        style={[
+                          styles.winnerText,
+                          boardWinner === 'O' ? styles.cellO : styles.cellX,
+                        ]}
+                      >
+                        {boardWinner === 'draw' ? 'D' : boardWinner}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
-              ) : null}
-            </View>
-          );
-        })}
+              );
+            })}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -101,14 +107,16 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   outerGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
     borderRadius: 22,
     overflow: 'hidden',
   },
+  boardRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   smallBoard: {
-    width: '31.6%',
+    flex: 1,
     aspectRatio: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
