@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
 import { PlayerTurnCard } from '../components/PlayerTurnCard';
@@ -60,24 +60,30 @@ export function LocalGameScreen({ navigation, route }: Props) {
             : 'The next player can choose any open board.'}
         </Text>
         <View style={styles.playerRow}>
-          <PlayerTurnCard
-            nickname={playerXName}
-            symbol="X"
-            isActive={state.currentPlayer === 'X'}
-            mascot="Local Player"
-            undoChancesRemaining={undoChances.X}
-            canUndo={undoWindow?.player === 'X' && undoChances.X > 0}
-            onUndo={() => handleUndo('X')}
-          />
-          <PlayerTurnCard
-            nickname={playerOName}
-            symbol="O"
-            isActive={state.currentPlayer === 'O'}
-            mascot="Local Player"
-            undoChancesRemaining={undoChances.O}
-            canUndo={undoWindow?.player === 'O' && undoChances.O > 0}
-            onUndo={() => handleUndo('O')}
-          />
+          {(['X', 'O'] as const).map((seat) => {
+            const name = seat === 'X' ? playerXName : playerOName;
+            const chances = undoChances[seat];
+            const canUndoSeat = undoWindow?.player === seat && chances > 0;
+            return (
+              <View key={seat} style={styles.playerColumn}>
+                <PlayerTurnCard
+                  nickname={name}
+                  symbol={seat}
+                  isActive={state.currentPlayer === seat}
+                  mascot="Local Player"
+                />
+                <Pressable
+                  onPress={() => handleUndo(seat)}
+                  disabled={!canUndoSeat}
+                  style={styles.undoButton}
+                >
+                  <Text style={[styles.undoText, !canUndoSeat && styles.undoTextDisabled]}>
+                    Undo ({chances})
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
         </View>
       </Card>
 
@@ -114,6 +120,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
+  },
+  playerColumn: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  undoButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  undoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  undoTextDisabled: {
+    opacity: 0.35,
   },
   boardWrapper: {
     gap: 16,

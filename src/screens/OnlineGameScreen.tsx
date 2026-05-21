@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
 import { PlayerTurnCard } from '../components/PlayerTurnCard';
@@ -132,18 +132,26 @@ export function OnlineGameScreen({ navigation, route }: Props) {
           {session.players.map((player) => {
             const isMe = player.profileId === profile.id;
             const playerChances = player.seat === 'X' ? session.game.undoChancesX : session.game.undoChancesO;
+            const canUndoThis = isMe && canUndo;
             return (
-              <PlayerTurnCard
-                key={player.id}
-                nickname={player.nickname}
-                mascot={player.mascot}
-                symbol={player.seat}
-                isActive={session.game.currentTurnPlayer === player.seat}
-                isYou={isMe}
-                undoChancesRemaining={playerChances}
-                canUndo={isMe && canUndo}
-                onUndo={isMe ? handleOnlineUndo : undefined}
-              />
+              <View key={player.id} style={styles.playerColumn}>
+                <PlayerTurnCard
+                  nickname={player.nickname}
+                  mascot={player.mascot}
+                  symbol={player.seat}
+                  isActive={session.game.currentTurnPlayer === player.seat}
+                  isYou={isMe}
+                />
+                <Pressable
+                  onPress={isMe ? handleOnlineUndo : undefined}
+                  disabled={!canUndoThis}
+                  style={styles.undoButton}
+                >
+                  <Text style={[styles.undoText, !canUndoThis && styles.undoTextDisabled]}>
+                    Undo ({playerChances})
+                  </Text>
+                </Pressable>
+              </View>
             );
           })}
         </View>
@@ -209,6 +217,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
+  },
+  playerColumn: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  undoButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  undoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  undoTextDisabled: {
+    opacity: 0.35,
   },
   error: {
     color: colors.danger,
