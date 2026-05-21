@@ -1,9 +1,10 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { Screen } from '../components/Screen';
+import { NestedBoard } from '../features/game-ui/NestedBoard';
 import { RootStackParamList } from '../types/navigation';
 import { colors } from '../theme/colors';
 
@@ -21,6 +22,18 @@ export function LocalResultScreen({ navigation, route }: Props) {
         <Text style={styles.result}>
           {state.winner === 'draw' ? 'It is a draw.' : `${winnerName} wins the game.`}
         </Text>
+      </Card>
+
+      <View style={styles.boardWrapper}>
+        <NestedBoard
+          state={state}
+          activePlayer={state.winner === 'O' ? 'O' : 'X'}
+          disabled
+          onMove={() => {}}
+        />
+      </View>
+
+      <Card>
         <PrimaryButton
           label="Restart"
           onPress={() =>
@@ -46,5 +59,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 18,
     lineHeight: 26,
+  },
+  boardWrapper: {
+    paddingHorizontal: 4,
   },
 });

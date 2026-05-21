@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { Screen } from '../components/Screen';
 import { useAuth } from '../features/auth/AuthContext';
+import { NestedBoard } from '../features/game-ui/NestedBoard';
 import {
   fetchOnlineSession,
   requestRematch,
@@ -89,7 +90,18 @@ export function OnlineResultScreen({ navigation, route }: Props) {
         ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+      </Card>
 
+      <View style={styles.boardWrapper}>
+        <NestedBoard
+          state={session.game.state}
+          activePlayer={session.game.winner === 'O' ? 'O' : 'X'}
+          disabled
+          onMove={() => {}}
+        />
+      </View>
+
+      <Card>
         {session.game.status !== 'closed' && !session.game.rematchStatus ? (
           <PrimaryButton
             label={isWorking ? 'Sending...' : 'Restart'}
@@ -162,5 +174,8 @@ const styles = StyleSheet.create({
   error: {
     color: colors.danger,
     fontSize: 14,
+  },
+  boardWrapper: {
+    paddingHorizontal: 4,
   },
 });
