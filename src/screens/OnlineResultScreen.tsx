@@ -175,7 +175,5 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontSize: 14,
   },
-  boardWrapper: {
-    paddingHorizontal: 4,
-  },
+  boardWrapper: {},
 });
