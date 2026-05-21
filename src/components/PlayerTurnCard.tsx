@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconBadge } from './IconBadge';
 import { colors } from '../theme/colors';
@@ -10,6 +10,9 @@ type PlayerTurnCardProps = {
   symbol: PlayerSymbol;
   isActive: boolean;
   isYou?: boolean;
+  undoChancesRemaining?: number;
+  canUndo?: boolean;
+  onUndo?: () => void;
 };
 
 export function PlayerTurnCard({
@@ -18,11 +21,15 @@ export function PlayerTurnCard({
   symbol,
   isActive,
   isYou = false,
+  undoChancesRemaining,
+  canUndo = false,
+  onUndo,
 }: PlayerTurnCardProps) {
   const activeStyle = symbol === 'X' ? styles.activeX : styles.activeO;
   const symbolStyle = symbol === 'X' ? styles.symbolX : styles.symbolO;
   const nicknameStyle = isActive ? styles.nicknameActive : styles.nicknameInactive;
   const youStyle = isActive ? styles.youActive : styles.youInactive;
+  const undoColor = symbol === 'X' ? colors.playerX : colors.playerO;
 
   return (
     <View style={[styles.card, isActive ? activeStyle : undefined]}>
@@ -34,6 +41,17 @@ export function PlayerTurnCard({
         </Text>
       </View>
       {isYou ? <Text style={[styles.youText, youStyle]}>You</Text> : <View style={styles.youSpacer} />}
+      {undoChancesRemaining !== undefined && (
+        <Pressable
+          onPress={onUndo}
+          disabled={!canUndo}
+          style={[styles.undoButton, !canUndo && styles.undoButtonDisabled]}
+        >
+          <Text style={[styles.undoText, { color: canUndo ? undoColor : colors.textMuted }]}>
+            Undo ({undoChancesRemaining})
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -41,7 +59,6 @@ export function PlayerTurnCard({
 const styles = StyleSheet.create({
   card: {
     width: 116,
-    height: 112,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -101,5 +118,20 @@ const styles = StyleSheet.create({
   },
   youSpacer: {
     height: 16,
+  },
+  undoButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  undoButtonDisabled: {
+    opacity: 0.4,
+  },
+  undoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

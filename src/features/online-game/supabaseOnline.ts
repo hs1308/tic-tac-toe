@@ -22,6 +22,10 @@ type GameRow = {
   status: 'waiting' | 'active' | 'finished' | 'closed';
   rematch_status: RematchStatus;
   rematch_requested_by_profile_id: string | null;
+  undo_chances_x: number;
+  undo_chances_o: number;
+  last_undo_by: 'X' | 'O' | null;
+  last_undo_at: string | null;
 };
 
 type PlayerRow = {
@@ -45,6 +49,10 @@ function mapGame(row: GameRow): OnlineGame {
     status: row.status,
     rematchStatus: row.rematch_status,
     rematchRequestedByProfileId: row.rematch_requested_by_profile_id,
+    undoChancesX: row.undo_chances_x ?? 3,
+    undoChancesO: row.undo_chances_o ?? 3,
+    lastUndoBy: row.last_undo_by,
+    lastUndoAt: row.last_undo_at,
   };
 }
 
@@ -253,6 +261,36 @@ export async function updateOnlineGameState(gameId: string, nextState: NestedGam
       last_move_at: new Date().toISOString(),
       rematch_status: null,
       rematch_requested_by_profile_id: null,
+      last_undo_by: null,
+      last_undo_at: null,
+    })
+    .eq('id', gameId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function undoOnlineMove(
+  gameId: string,
+  previousState: NestedGameState,
+  seat: 'X' | 'O',
+  currentChances: { X: number; O: number },
+) {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('tic_tac_toe_games')
+    .update({
+      current_turn_player: previousState.currentPlayer,
+      active_board_index: previousState.activeBoardIndex,
+      state: previousState,
+      winner: previousState.winner,
+      status: 'active',
+      last_move_at: now,
+      undo_chances_x: seat === 'X' ? currentChances.X - 1 : currentChances.X,
+      undo_chances_o: seat === 'O' ? currentChances.O - 1 : currentChances.O,
+      last_undo_by: seat,
+      last_undo_at: now,
     })
     .eq('id', gameId);
 
@@ -304,6 +342,10 @@ export async function respondToRematch(gameId: string, accept: boolean) {
       status: 'active',
       rematch_status: null,
       rematch_requested_by_profile_id: null,
+      undo_chances_x: 3,
+      undo_chances_o: 3,
+      last_undo_by: null,
+      last_undo_at: null,
     })
     .eq('id', gameId);
 

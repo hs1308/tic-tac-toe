@@ -32,6 +32,10 @@ export type OnlineGame = {
   status: OnlineGameStatus;
   rematchStatus: RematchStatus;
   rematchRequestedByProfileId: string | null;
+  undoChancesX: number;
+  undoChancesO: number;
+  lastUndoBy: PlayerSymbol | null;
+  lastUndoAt: string | null;
 };
 
 export type OnlineGamePlayer = {

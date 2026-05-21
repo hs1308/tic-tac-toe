@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
@@ -11,9 +11,10 @@ import { NestedBoard } from '../features/game-ui/NestedBoard';
 import {
   fetchOnlineSession,
   subscribeToSession,
+  undoOnlineMove,
   updateOnlineGameState,
 } from '../features/online-game/supabaseOnline';
-import { OnlineSession } from '../types/game';
+import { NestedGameState, OnlineSession, PlayerSymbol } from '../types/game';
 import { RootStackParamList } from '../types/navigation';
 import { colors } from '../theme/colors';
 
@@ -26,6 +27,13 @@ export function OnlineGameScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
 
+  type UndoWindow = { previousState: NestedGameState; player: PlayerSymbol } | null;
+  const [undoWindow, setUndoWindow] = useState<UndoWindow>(null);
+  const undoWindowRef = useRef<UndoWindow>(null);
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [undoNotification, setUndoNotification] = useState<string | null>(null);
+  const lastSeenUndoAtRef = useRef<string | null>(null);
+
   useEffect(() => {
     const load = async () => {
       const nextSession = await fetchOnlineSession(gameId);
@@ -33,6 +41,26 @@ export function OnlineGameScreen({ navigation, route }: Props) {
 
       if (nextSession.game.status === 'finished' || nextSession.game.status === 'closed') {
         navigation.replace('OnlineResult', { gameId });
+        return;
+      }
+
+      // Show notification when opponent undoes their move
+      if (nextSession.game.lastUndoAt && nextSession.game.lastUndoAt !== lastSeenUndoAtRef.current) {
+        lastSeenUndoAtRef.current = nextSession.game.lastUndoAt;
+        const undoer = nextSession.players.find(p => p.seat === nextSession.game.lastUndoBy);
+        if (undoer && undoer.profileId !== profile?.id) {
+          setUndoNotification(`${undoer.nickname} undid their move`);
+          setTimeout(() => setUndoNotification(null), 3000);
+        }
+      }
+
+      // If it's our turn again but we still have an undo window open, opponent moved — clear it
+      const myPlayerInSession = nextSession.players.find(p => p.profileId === profile?.id);
+      if (undoWindowRef.current && myPlayerInSession &&
+          nextSession.game.state.currentPlayer === myPlayerInSession.seat) {
+        setUndoWindow(null);
+        undoWindowRef.current = null;
+        if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
       }
     };
 
@@ -65,6 +93,25 @@ export function OnlineGameScreen({ navigation, route }: Props) {
   const playableBoards = getPlayableBoards(session.game.state);
   const canMove = Boolean(myPlayer && myPlayer.seat === session.game.currentTurnPlayer);
 
+  const myUndoChances = myPlayer?.seat === 'X' ? session.game.undoChancesX : session.game.undoChancesO;
+  const canUndo = Boolean(
+    undoWindow && myPlayer && undoWindow.player === myPlayer.seat && myUndoChances > 0
+  );
+
+  const handleOnlineUndo = () => {
+    if (!undoWindow || !myPlayer || !canUndo) return;
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    setUndoWindow(null);
+    undoWindowRef.current = null;
+    setIsSubmittingMove(true);
+    void undoOnlineMove(gameId, undoWindow.previousState, myPlayer.seat, {
+      X: session.game.undoChancesX,
+      O: session.game.undoChancesO,
+    })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setIsSubmittingMove(false));
+  };
+
   return (
     <Screen>
       <Card>
@@ -82,17 +129,25 @@ export function OnlineGameScreen({ navigation, route }: Props) {
             : 'The next player can choose any open board.'}
         </Text>
         <View style={styles.playerRow}>
-          {session.players.map((player) => (
-            <PlayerTurnCard
-              key={player.id}
-              nickname={player.nickname}
-              mascot={player.mascot}
-              symbol={player.seat}
-              isActive={session.game.currentTurnPlayer === player.seat}
-              isYou={player.profileId === profile.id}
-            />
-          ))}
+          {session.players.map((player) => {
+            const isMe = player.profileId === profile.id;
+            const playerChances = player.seat === 'X' ? session.game.undoChancesX : session.game.undoChancesO;
+            return (
+              <PlayerTurnCard
+                key={player.id}
+                nickname={player.nickname}
+                mascot={player.mascot}
+                symbol={player.seat}
+                isActive={session.game.currentTurnPlayer === player.seat}
+                isYou={isMe}
+                undoChancesRemaining={playerChances}
+                canUndo={isMe && canUndo}
+                onUndo={isMe ? handleOnlineUndo : undefined}
+              />
+            );
+          })}
         </View>
+        {undoNotification ? <Text style={styles.undoNotification}>{undoNotification}</Text> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </Card>
 
@@ -101,17 +156,30 @@ export function OnlineGameScreen({ navigation, route }: Props) {
         state={session.game.state}
         disabled={!canMove || isSubmittingMove}
         onMove={(boardIndex, cellIndex) => {
-          if (!myPlayer) {
-            return;
-          }
+          if (!myPlayer) return;
 
           setError(null);
           setIsSubmittingMove(true);
 
+          const prevState = session.game.state;
           const nextState = applyMove(session.game.state, boardIndex, cellIndex);
 
+          if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+          const newWindow = { previousState: prevState, player: myPlayer.seat as PlayerSymbol };
+          setUndoWindow(newWindow);
+          undoWindowRef.current = newWindow;
+          undoTimeoutRef.current = setTimeout(() => {
+            setUndoWindow(null);
+            undoWindowRef.current = null;
+          }, 5000);
+
           void updateOnlineGameState(gameId, nextState)
-            .catch((caughtError: Error) => setError(caughtError.message))
+            .catch((caughtError: Error) => {
+              setError(caughtError.message);
+              setUndoWindow(null);
+              undoWindowRef.current = null;
+              if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+            })
             .finally(() => setIsSubmittingMove(false));
         }}
       />
@@ -145,5 +213,10 @@ const styles = StyleSheet.create({
   error: {
     color: colors.danger,
     fontSize: 14,
+  },
+  undoNotification: {
+    color: colors.primary,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

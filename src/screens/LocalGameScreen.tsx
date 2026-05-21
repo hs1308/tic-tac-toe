@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -6,6 +6,7 @@ import { Card } from '../components/Card';
 import { PlayerTurnCard } from '../components/PlayerTurnCard';
 import { Screen } from '../components/Screen';
 import { applyMove, createInitialGameState, getPlayableBoards } from '../features/game-engine/engine';
+import { NestedGameState, PlayerSymbol } from '../types/game';
 import { NestedBoard } from '../features/game-ui/NestedBoard';
 import { RootStackParamList } from '../types/navigation';
 import { colors } from '../theme/colors';
@@ -16,8 +17,36 @@ export function LocalGameScreen({ navigation, route }: Props) {
   const { playerXName, playerOName } = route.params;
   const [state, setState] = useState(() => createInitialGameState());
 
+  type UndoWindow = { previousState: NestedGameState; player: PlayerSymbol } | null;
+  const [undoWindow, setUndoWindow] = useState<UndoWindow>(null);
+  const [undoChances, setUndoChances] = useState({ X: 3, O: 3 });
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const currentPlayerName = state.currentPlayer === 'X' ? playerXName : playerOName;
   const playableBoards = getPlayableBoards(state);
+
+  const handleMove = (boardIndex: number, cellIndex: number) => {
+    const prevState = state;
+    const nextState = applyMove(state, boardIndex, cellIndex);
+
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    setUndoWindow({ previousState: prevState, player: prevState.currentPlayer });
+    undoTimeoutRef.current = setTimeout(() => setUndoWindow(null), 5000);
+
+    setState(nextState);
+
+    if (nextState.status === 'finished') {
+      navigation.replace('LocalResult', { playerXName, playerOName, state: nextState });
+    }
+  };
+
+  const handleUndo = (player: PlayerSymbol) => {
+    if (!undoWindow || undoWindow.player !== player || undoChances[player] <= 0) return;
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    setState(undoWindow.previousState);
+    setUndoWindow(null);
+    setUndoChances(prev => ({ ...prev, [player]: prev[player] - 1 }));
+  };
 
   return (
     <Screen>
@@ -36,12 +65,18 @@ export function LocalGameScreen({ navigation, route }: Props) {
             symbol="X"
             isActive={state.currentPlayer === 'X'}
             mascot="Local Player"
+            undoChancesRemaining={undoChances.X}
+            canUndo={undoWindow?.player === 'X' && undoChances.X > 0}
+            onUndo={() => handleUndo('X')}
           />
           <PlayerTurnCard
             nickname={playerOName}
             symbol="O"
             isActive={state.currentPlayer === 'O'}
             mascot="Local Player"
+            undoChancesRemaining={undoChances.O}
+            canUndo={undoWindow?.player === 'O' && undoChances.O > 0}
+            onUndo={() => handleUndo('O')}
           />
         </View>
       </Card>
@@ -50,18 +85,7 @@ export function LocalGameScreen({ navigation, route }: Props) {
         <NestedBoard
           activePlayer={state.currentPlayer}
           state={state}
-          onMove={(boardIndex, cellIndex) => {
-            const nextState = applyMove(state, boardIndex, cellIndex);
-            setState(nextState);
-
-            if (nextState.status === 'finished') {
-              navigation.replace('LocalResult', {
-                playerXName,
-                playerOName,
-                state: nextState,
-              });
-            }
-          }}
+          onMove={handleMove}
         />
       </View>
     </Screen>
