@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
+import { HowToPlay } from '../components/HowToPlay';
 import { IconBadge } from '../components/IconBadge';
 import { Screen } from '../components/Screen';
 import { useAuth } from '../features/auth/AuthContext';
@@ -16,14 +17,6 @@ import { colors } from '../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-const howToPlay = [
-  'The very first move can go in any of the 81 cells.',
-  'Every later move sends the next player to the matching small board position.',
-  'Win a small board to claim that square on the big board.',
-  'If you are sent to a full or won board, you can play in any open board.',
-  'Win three claimed boards in a row on the big board to win the match.',
-  'If no playable boards remain and nobody wins the big board, the game is a draw.',
-];
 
 type ModeCardProps = {
   icon: string;
@@ -127,11 +120,7 @@ export function HomeScreen({ navigation }: Props) {
 
       <Card>
         <Text style={styles.sectionTitle}>How to Play</Text>
-        {howToPlay.map((instruction) => (
-          <Text key={instruction} style={styles.instruction}>
-            - {instruction}
-          </Text>
-        ))}
+        <HowToPlay />
       </Card>
     </Screen>
   );
@@ -230,10 +219,5 @@ const styles = StyleSheet.create({
     color: '#042033',
     fontSize: 15,
     fontWeight: '800',
-  },
-  instruction: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 21,
   },
 });
