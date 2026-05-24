@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 import { Card } from '../components/Card';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -14,6 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'OnlineWaiting'>;
 
 export function OnlineWaitingScreen({ navigation, route }: Props) {
   const [session, setSession] = useState<OnlineSession | null>(null);
+  const [copied, setCopied] = useState(false);
   const { gameId } = route.params;
 
   useEffect(() => {
@@ -44,7 +46,22 @@ export function OnlineWaitingScreen({ navigation, route }: Props) {
     <Screen>
       <Card>
         <Text style={styles.title}>Share this code</Text>
-        <Text style={styles.code}>{session?.game.code ?? '.....'}</Text>
+        <View style={styles.codeRow}>
+          <Text style={styles.code}>{session?.game.code ?? '.....'}</Text>
+          <Pressable
+            style={styles.copyButton}
+            onPress={() => {
+              const code = session?.game.code;
+              if (!code) return;
+              void Clipboard.setStringAsync(code).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+          >
+            <Text style={styles.copyText}>{copied ? 'Copied!' : 'Copy'}</Text>
+          </Pressable>
+        </View>
         <Text style={styles.body}>
           Send the code by WhatsApp or any messenger. The game starts once your friend joins.
         </Text>
@@ -74,12 +91,30 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
   },
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
   code: {
     color: colors.primary,
     fontSize: 42,
     letterSpacing: 4,
     fontWeight: '900',
-    textAlign: 'center',
+  },
+  copyButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  copyText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
   body: {
     color: colors.textMuted,
