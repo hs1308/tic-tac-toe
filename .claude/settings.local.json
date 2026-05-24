@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\Vibes\\\\tic-tac-toe\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "mcp__e545071b-0cca-41cc-8689-6460756929fc__list_projects",
+      "mcp__e545071b-0cca-41cc-8689-6460756929fc__apply_migration",
+      "Bash(npx expo *)",
+      "Bash(npm install *)",
+      "Bash(Remove-Item \"D:\\\\Vibes\\\\tic-tac-toe\\\\src\\\\screens\\\\CreateOnlineGameScreen.tsx\")"
+    ]
+  }
+}

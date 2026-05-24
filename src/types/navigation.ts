@@ -16,7 +16,6 @@ export type RootStackParamList = {
     state: NestedGameState;
   };
   OnlineLobby: undefined;
-  CreateOnlineGame: undefined;
   JoinOnlineGame: undefined;
   OnlineWaiting: {
     gameId: string;

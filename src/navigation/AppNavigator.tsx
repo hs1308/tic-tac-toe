@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '../features/auth/AuthContext';
-import { CreateOnlineGameScreen } from '../screens/CreateOnlineGameScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { JoinOnlineGameScreen } from '../screens/JoinOnlineGameScreen';
 import { LocalGameScreen } from '../screens/LocalGameScreen';
@@ -99,11 +98,6 @@ export function AppNavigator() {
               name="OnlineLobby"
               component={OnlineLobbyScreen}
               options={{ title: 'Online play' }}
-            />
-            <Stack.Screen
-              name="CreateOnlineGame"
-              component={CreateOnlineGameScreen}
-              options={{ title: 'Create game' }}
             />
             <Stack.Screen
               name="JoinOnlineGame"
