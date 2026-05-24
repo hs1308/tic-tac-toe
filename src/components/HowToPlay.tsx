@@ -79,7 +79,9 @@ function MiniBoard({
   cellSize?: number;
   gap?: number;
 }) {
-  const boardSize = cellSize * 3 + gap * 2;
+  // padding (5 each side) + borderWidth (1 each side) must be added so cells
+  // aren't squeezed into fewer than 3 columns when flex-wrapping
+  const boardSize = cellSize * 3 + gap * 2 + 5 * 2 + 1 * 2;
   return (
     <View
       style={{
